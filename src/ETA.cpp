@@ -33,85 +33,91 @@ void ETA ::request_assign(int id, int u, int v, int people, double req_time)
 int ETA ::request_down(int u, int v)
 {
 
-    int ans = 0;
-    int cost = 1e9;
-
+     int cost = 1e9;
+    int ans;
     for (int i = 0; i < 4; i++)
     {
         if (L[i].req_dir == 0)
         {
-            int rem = abs(L[i].req_flore - u);
-            int buffer = ((L[i].req_flore > u) ? 0 : 0); // buffer can be calculated by RL
-            int ncost = (rem - 1) * 2 + (buffer + 1) * 3 + buffer * 5;
-            if (cost > ncost)
+            int nf = abs(L[i].req_flore - u);
+            // int buffer = (L[i].cur_flore> u)? 1: 0;
+
+            int ncost = (nf - 1) * 2 + 3;
+            if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
         if (L[i].req_dir == -1 && L[i].req_flore > u)
         {
-
-            int rem = L[i].req_flore - u;
+            int nf = L[i].req_flore - u;
             int cnt = 0;
-            for (auto it : L[i].stops)
+            for (auto it : L[i].stop)
             {
                 cnt += (it > u);
             }
-            int ncost = cnt * 3 + cnt * 5 + (rem - cnt) * 2;
+            int e = (L[i].stop.size() - cnt) + L[i].next_stop.size();
+            int ncost = (cnt + 1) * 3 + (nf - cnt) * 2 + cnt * 5 + e * 3;
             if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
-        if (L[i].req_dir == 1 && (L[i].next_dir == -1 || L[i].next_dir == 0))
+        if (L[i].req_dir == 1 && L[i].next_dir != 1)
         {
-            int up_rem = (*L[i].stops.rbegin()) - L[i].req_flore;
-            int cnt = L[i].stops.size();
-            int ncost = (up_rem - cnt) * 2 + cnt * 3 + cnt * 5;
-            int buffer = (((*L[i].stops.rbegin()) > u) ? 0 : 0); // buffer we can calculate with RL
-            int down_rem = abs(u - (*L[i].stops.rbegin()));
-            cnt = 0;
-            for (auto it : L[i].next_stops)
+            int nf1 = (*L[i].stop.rbegin()) - L[i].req_flore;
+            int cnt1 = L[i].stop.size();
+            int ncost = (cnt1 + 1) * 3 + (nf1 - cnt1) * 2 + cnt1 * 5;
+            int st = u;
+            if (L[i].next_stop.size())
             {
-                cnt += (it > u);
+                st = max(st, *L[i].next_stop.rbegin());
             }
-            ncost += (down_rem - cnt - buffer) * 2 + max(buffer, 1) * 5 + cnt * 8;
+            int nf2 = abs(st - *L[i].stop.rbegin());
+            ncost += nf2 * 2;
+            nf2 = st - u;
+            int cnt2 = 0;
+            for (auto it : L[i].next_stop)
+            {
+                cnt2 += (it > u);
+            }
+            ncost += (cnt2 + 1) * 3 + (nf2 - cnt2) * 2 + cnt2 * 5 + (L[i].next_stop.size() - cnt2) * 3;
             if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
-        if (L[i].req_dir == -1 && L[i].req_flore < u && (L[i].next_dir == -1 || L[i].next_dir == 0))
+        if (L[i].req_dir == -1 && L[i].cur_flore < u && L[i].next_dir != 1)
         {
-            int down_rem = L[i].req_flore - (*L[i].stops.begin());
-            int cnt = L[i].stops.size();
-            int ncost = (down_rem - cnt) * 2 + cnt * 8;
-            int mx = u;
-            if (L[i].next_stops.size())
+            int nf1 = abs(L[i].cur_flore - *L[i].stop.begin());
+            int cnt1 = L[i].stop.size();
+            int ncost = (cnt1 + 1) * 3 + (nf1 - cnt1) * 2 + cnt1 * 5;
+            int st = u;
+            if (L[i].next_stop.size())
             {
-                mx = max(mx, (*L[i].next_stops.rbegin()));
+                st = max(st, *L[i].next_stop.rbegin());
             }
-            int up_rem = abs(mx - (*L[i].stops.begin()));
-            ncost += up_rem * 2;
-            int down_rem1 = mx - u;
-            cnt = 0;
-            for (auto it : L[i].next_stops)
+            int nf2 = abs(st - *L[i].stop.begin());
+            ncost += nf2 * 2;
+            nf2 = st - u;
+            int cnt2 = 0;
+            for (auto it : L[i].next_stop)
             {
-                cnt += (it > u);
+                cnt2 += (it > u);
             }
-            ncost += (down_rem1 - cnt) * 2 + cnt * 8;
+            ncost += (cnt2 + 1) * 3 + (nf2 - cnt2) * 2 + cnt2 * 5 + (L[i].next_stop.size() - cnt2) * 3;
             if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
     }
 
-    int l = ans;
+    int l = ans-1;
 
     if (L[l].req_dir == 0)
     {
@@ -155,84 +161,91 @@ int ETA ::request_down(int u, int v)
 
 int ETA ::request_up(int u, int v)
 {
-    int ans = 0;
-    int cost = 1e9;
-
+     int cost = 1e9;
+    int ans;
     for (int i = 0; i < 4; i++)
     {
         if (L[i].req_dir == 0)
         {
-            int rem = abs(L[i].req_flore - u);
-            int buffer = (L[i].req_flore < u) ? 0 : 0; // buffer can be calculated by RL
-            int ncost = (rem - 1) * 2 + (buffer + 1) * 3 + buffer * 5;
+            int nf = abs(L[i].req_flore - u);
+            // int buffer = (L[i].cur_flore> u)? 1: 0;
+
+            int ncost = (nf - 1) * 2 + 3;
             if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
         if (L[i].req_dir == 1 && L[i].req_flore < u)
         {
-            int rem = u - L[i].req_flore;
+            int nf = abs(L[i].req_flore - u);
             int cnt = 0;
-            for (auto it : L[i].stops)
+            for (auto it : L[i].stop)
             {
                 cnt += (it < u);
             }
-            int ncost = cnt * 8 + (rem - cnt) * 2;
+            int e = (L[i].stop.size() - cnt) + L[i].next_stop.size();
+            int ncost = (cnt + 1) * 3 + (nf - cnt) * 2 + cnt * 5 + e * 3;
             if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
-        if (L[i].req_dir == -1 && (L[i].next_dir == 1 || L[i].next_dir == 0))
+        if (L[i].req_dir == -1 && L[i].next_dir != -1)
         {
-            int down_rem = L[i].req_flore - (*L[i].stops.begin());
-            int cnt = L[i].stops.size();
-            int ncost = (down_rem - cnt) * 2 + cnt * 8;
-            int up_rem = abs((*L[i].stops.begin()) - u);
-            cnt = 0;
-            for (auto it : L[i].next_stops)
+            int nf1 = abs((*L[i].stop.begin()) - L[i].req_flore);
+            int cnt1 = L[i].stop.size();
+            int ncost = (cnt1 + 1) * 3 + (nf1 - cnt1) * 2 + cnt1 * 5;
+            int st = u;
+            if (L[i].next_stop.size())
             {
-                cnt += (it < u);
+                st = min(st, *L[i].next_stop.begin());
             }
-            ncost += (up_rem - cnt) * 2 + cnt * 8;
+            int nf2 = abs(st - *L[i].stop.begin());
+            ncost += nf2 * 2;
+            nf2 = u - st;
+            int cnt2 = 0;
+            for (auto it : L[i].next_stop)
+            {
+                cnt2 += (it < u);
+            }
+            ncost += (cnt2 + 1) * 3 + (nf2 - cnt2) * 2 + cnt2 * 5 + (L[i].next_stop.size() - cnt2) * 3;
             if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
-        if (L[i].req_dir == 1 && L[i].req_flore > u && (L[i].next_dir == 1 || L[i].next_dir == 0))
+        if (L[i].req_dir == 1 && L[i].req_flore > u && L[i].next_dir != -1)
         {
-            int up_rem = (*L[i].stops.rbegin()) - L[i].req_flore;
-            int cnt = L[i].stops.size();
-            int ncost = (up_rem - cnt) * 2 + cnt * 8;
-            int mn = u;
-            if (L[i].next_stops.size())
+            int nf1 = abs(L[i].req_flore - *L[i].stop.rbegin());
+            int cnt1 = L[i].stop.size();
+            int ncost = (cnt1 + 1) * 3 + (nf1 - cnt1) * 2 + cnt1 * 5;
+            int st = u;
+            if (L[i].next_stop.size())
             {
-                mn = min((*L[i].next_stops.begin()), mn);
+                st = min(st, *L[i].next_stop.begin());
             }
-            int ex = abs(mn - (*L[i].stops.rbegin()));
-            ncost += ex * 2;
-            cnt = 0;
-            for (auto it : L[i].next_stops)
+            int nf2 = abs(st - *L[i].stop.rbegin());
+            ncost += nf2 * 2;
+            nf2 = st - u;
+            int cnt2 = 0;
+            for (auto it : L[i].next_stop)
             {
-                cnt += (it < u);
+                cnt2 += (it < u);
             }
-            int up_rem1 = u - mn;
-            ncost += (up_rem1 - cnt) * 2 + cnt * 8;
-
+            ncost += (cnt2 + 1) * 3 + (nf2 - cnt2) * 2 + cnt2 * 5 + (L[i].next_stop.size() - cnt2) * 3;
             if (ncost < cost)
             {
                 cost = ncost;
-                ans = i;
+                ans = i + 1;
             }
         }
     }
 
-    int l = ans;
+    int l = ans-1;
     if (L[l].req_dir == 0)
     {
         L[l].req_dir = 1;
