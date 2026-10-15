@@ -14,6 +14,12 @@ ETA ::ETA()
     mp.clear();
 }
 
+//  We can make this ETA algorithm as sophisticated as needed by incorporating factors such as 
+// passenger waiting time, existing passengers' delays, elevator occupancy, remaining capacity, traffic patterns, 
+// energy consumption, and predicted demand. We can also implement dynamic dispatch with adaptive 
+// traffic modes (Peak Up, Peak Down, Inter-floor, and Off-peak), real-time demand analysis, 
+// and sensor-based occupancy estimation. More advanced versions could leverage machine learning to predict passenger demand and continuously optimize elevator assignments.
+
 void ETA ::request_assign(int id, int u, int v, int people, double req_time)
 {
 
